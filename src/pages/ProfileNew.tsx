@@ -15,7 +15,7 @@ import { Loader2 } from "lucide-react";
 export default function ProfileNew() {
   const { role, user } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState<any>({ owner_name: "", enterprise_name: "" });
+  const [form, setForm] = useState<any>({ owner_name: "", enterprise_name: "", website_url: "", facebook_url: "", youtube_url: "", instagram_url: "" });
   const [categories, setCategories] = useState<{ name: string }[]>([]);
   const [developers, setDevelopers] = useState<{ id: string; display_name: string | null; email: string | null }[]>([]);
   const [saving, setSaving] = useState(false);
@@ -102,6 +102,22 @@ export default function ProfileNew() {
                 value={form.trade_license_text ?? ""}
                 onChange={(e) => setForm({ ...form, trade_license_text: e.target.value })}
               />
+            </Field>
+
+            <div className="sm:col-span-2 pt-2">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-2">Social Links (optional)</h3>
+            </div>
+            <Field label="Website URL">
+              <Input type="url" placeholder="https://example.com" value={form.website_url ?? ""} onChange={(e) => setForm({ ...form, website_url: e.target.value })} />
+            </Field>
+            <Field label="Facebook URL">
+              <Input type="url" placeholder="https://facebook.com/..." value={form.facebook_url ?? ""} onChange={(e) => setForm({ ...form, facebook_url: e.target.value })} />
+            </Field>
+            <Field label="YouTube URL">
+              <Input type="url" placeholder="https://youtube.com/..." value={form.youtube_url ?? ""} onChange={(e) => setForm({ ...form, youtube_url: e.target.value })} />
+            </Field>
+            <Field label="Instagram URL">
+              <Input type="url" placeholder="https://instagram.com/..." value={form.instagram_url ?? ""} onChange={(e) => setForm({ ...form, instagram_url: e.target.value })} />
             </Field>
 
             <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
