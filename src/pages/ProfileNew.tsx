@@ -97,7 +97,11 @@ export default function ProfileNew() {
               <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile("shop_image_url", "shop-images", f); }} />
             </Field>
             <Field label="Trade License">
-              <Input type="file" accept="image/*,application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile("trade_license_url", "trade-licenses", f); }} />
+              <Input
+                placeholder="Enter Trade License Number or Details"
+                value={form.trade_license_text ?? ""}
+                onChange={(e) => setForm({ ...form, trade_license_text: e.target.value })}
+              />
             </Field>
 
             <div className="sm:col-span-2 flex justify-end gap-2 pt-2">

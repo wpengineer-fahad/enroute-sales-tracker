@@ -62,7 +62,7 @@ export function ProfileEditDialog({ open, onOpenChange, profile, onSaved }: Prop
       registration_date: form.registration_date || null,
       owner_image_url: form.owner_image_url,
       shop_image_url: form.shop_image_url,
-      trade_license_url: form.trade_license_url,
+      trade_license_text: form.trade_license_text,
       ...(role === "admin" ? { developer_id: form.developer_id || null } : {}),
     };
     const { error } = await supabase.from("me_profiles").update(payload).eq("id", profile.id);
@@ -115,9 +115,12 @@ export function ProfileEditDialog({ open, onOpenChange, profile, onSaved }: Prop
             <Input type="file" accept="image/*" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile("shop_image_url", "shop-images", f); }} />
             {form.shop_image_url && <img src={form.shop_image_url} className="mt-2 h-16 w-24 rounded object-cover" alt="" />}
           </Field>
-          <Field label="Trade License (file)">
-            <Input type="file" accept="image/*,application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile("trade_license_url", "trade-licenses", f); }} />
-            {form.trade_license_url && <a href={form.trade_license_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline mt-1 inline-block">View current</a>}
+          <Field label="Trade License">
+            <Input
+              placeholder="Enter Trade License Number or Details"
+              value={form.trade_license_text ?? ""}
+              onChange={(e) => setForm({ ...form, trade_license_text: e.target.value })}
+            />
           </Field>
         </div>
         <DialogFooter>

@@ -8,7 +8,7 @@ import { Loader2, Download } from "lucide-react";
 
 const TEMPLATE_HEADERS = [
   "owner_name","enterprise_name","business_category","sub_sector",
-  "contact_number","email","location","registration_date",
+  "contact_number","email","location","registration_date","trade_license_text",
 ];
 
 function parseCSV(text: string): string[][] {
