@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,12 +10,14 @@ import { toast } from "sonner";
 import { Building2, Loader2 } from "lucide-react";
 import type { AppRole } from "@/lib/constants";
 
+type SignupRole = Exclude<AppRole, "admin">;
+
 export default function Login() {
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [role, setRole] = useState<AppRole>("me");
+  const [role, setRole] = useState<SignupRole>("me");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -25,18 +27,42 @@ export default function Login() {
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
-          email, password,
+          email,
+          password,
           options: {
-            emailRedirectTo: `${window.location.origin}/dashboard`,
+            emailRedirectTo: `${window.location.origin}/verify-email`,
             data: { display_name: displayName || email, role },
           },
         });
         if (error) throw error;
-        toast.success("Account created. You can sign in now.");
-        setMode("login");
+        toast.success("Account created. Check your email for the verification code.");
+        // Persist email for verify page convenience
+        sessionStorage.setItem("pending_verify_email", email);
+        navigate("/verify-email");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Check verification
+        if (data.user && !data.user.email_confirmed_at && !data.user.confirmed_at) {
+          sessionStorage.setItem("pending_verify_email", email);
+          toast.message("Please verify your email to continue.");
+          navigate("/verify-email");
+          return;
+        }
+
+        // Check approval
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("account_status")
+          .eq("id", data.user!.id)
+          .maybeSingle();
+
+        if (profile?.account_status !== "approved") {
+          navigate("/pending-approval");
+          return;
+        }
+
         toast.success("Welcome back");
         navigate("/dashboard");
       }
@@ -62,7 +88,9 @@ export default function Login() {
           <CardHeader>
             <CardTitle>{mode === "login" ? "Sign in" : "Create your account"}</CardTitle>
             <CardDescription>
-              {mode === "login" ? "Welcome back. Choose your role and sign in." : "Pick the role that matches you."}
+              {mode === "login"
+                ? "Welcome back. Sign in to continue."
+                : "Pick the role that matches you. Admin accounts are issued by an administrator."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -84,13 +112,12 @@ export default function Login() {
 
               {mode === "signup" && (
                 <div className="space-y-2">
-                  <Label>Login as</Label>
-                  <RadioGroup value={role} onValueChange={(v) => setRole(v as AppRole)} className="grid grid-cols-1 gap-2">
+                  <Label>Sign up as</Label>
+                  <RadioGroup value={role} onValueChange={(v) => setRole(v as SignupRole)} className="grid grid-cols-1 gap-2">
                     {([
                       ["me", "ME (Micro Enterprise)"],
                       ["developer", "Sales / Market Developer"],
-                      ["admin", "Administrator"],
-                    ] as [AppRole, string][]).map(([val, label]) => (
+                    ] as [SignupRole, string][]).map(([val, label]) => (
                       <label key={val} className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-secondary transition">
                         <RadioGroupItem value={val} id={`r-${val}`} />
                         <span className="text-sm">{label}</span>
