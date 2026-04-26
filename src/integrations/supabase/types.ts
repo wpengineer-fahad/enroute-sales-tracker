@@ -127,7 +127,9 @@ export type Database = {
           developer_id: string | null
           email: string | null
           enterprise_name: string
+          facebook_url: string | null
           id: string
+          instagram_url: string | null
           location: string | null
           owner_image_url: string | null
           owner_name: string
@@ -138,6 +140,8 @@ export type Database = {
           trade_license_url: string | null
           updated_at: string
           user_id: string | null
+          website_url: string | null
+          youtube_url: string | null
         }
         Insert: {
           business_category?: string | null
@@ -146,7 +150,9 @@ export type Database = {
           developer_id?: string | null
           email?: string | null
           enterprise_name: string
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           location?: string | null
           owner_image_url?: string | null
           owner_name: string
@@ -157,6 +163,8 @@ export type Database = {
           trade_license_url?: string | null
           updated_at?: string
           user_id?: string | null
+          website_url?: string | null
+          youtube_url?: string | null
         }
         Update: {
           business_category?: string | null
@@ -165,7 +173,9 @@ export type Database = {
           developer_id?: string | null
           email?: string | null
           enterprise_name?: string
+          facebook_url?: string | null
           id?: string
+          instagram_url?: string | null
           location?: string | null
           owner_image_url?: string | null
           owner_name?: string
@@ -176,6 +186,8 @@ export type Database = {
           trade_license_url?: string | null
           updated_at?: string
           user_id?: string | null
+          website_url?: string | null
+          youtube_url?: string | null
         }
         Relationships: []
       }
