@@ -1,6 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, ListChecks, Package, UserCog, BarChart3, Upload, Building2, LogOut,
+  ShieldCheck, ShieldPlus,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -24,6 +25,8 @@ export function AppSidebar() {
     { title: "Developers", url: "/developers", icon: UserCog },
     { title: "Sub-Sectors", url: "/sub-sectors", icon: BarChart3 },
     { title: "Bulk Import", url: "/import", icon: Upload },
+    { title: "User Approvals", url: "/user-approvals", icon: ShieldCheck },
+    { title: "Create Admin", url: "/create-admin", icon: ShieldPlus },
   ];
   const devItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
