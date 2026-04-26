@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Upload, ExternalLink, RefreshCw } from "lucide-react";
-import { type TaskStatus } from "@/lib/constants";
+import { STATUS_LABEL, type TaskStatus } from "@/lib/constants";
 import { toast } from "sonner";
 import { uploadFile } from "@/lib/uploadFile";
 
@@ -30,6 +31,8 @@ const STATUS_TEXT: Record<TaskStatus, string> = {
 };
 
 export function TasksSection({ meProfileId }: { meProfileId: string }) {
+  const { role } = useAuth();
+  const canManage = role === "admin" || role === "developer";
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,19 +108,33 @@ export function TasksSection({ meProfileId }: { meProfileId: string }) {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Select value={row.status} onValueChange={(v) => updateStatus(row.id, v as TaskStatus)}>
-                        <SelectTrigger className={`w-[150px] ${STATUS_TEXT[row.status]}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="processing">Processing</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {canManage ? (
+                        <Select value={row.status} onValueChange={(v) => updateStatus(row.id, v as TaskStatus)}>
+                          <SelectTrigger className={`w-[150px] ${STATUS_TEXT[row.status]}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="processing">Processing</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className={`text-sm font-medium ${STATUS_TEXT[row.status]}`}>{STATUS_LABEL[row.status]}</span>
+                      )}
                     </TableCell>
                     <TableCell>
-                      {isCompleted ? (
+                      {!canManage ? (
+                        row.proof_url ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <a href={row.proof_url} target="_blank" rel="noreferrer">
+                              <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> View
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )
+                      ) : isCompleted ? (
                         <div className="flex items-center gap-2 flex-wrap">
                           <label className="inline-flex">
                             <input
