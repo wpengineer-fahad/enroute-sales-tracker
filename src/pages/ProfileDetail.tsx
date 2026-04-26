@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2, Globe, Facebook, Youtube, Instagram } from "lucide-react";
 import { TasksSection } from "@/components/profile/TasksSection";
 import { ProductsSection } from "@/components/profile/ProductsSection";
 import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
@@ -42,8 +42,14 @@ export default function ProfileDetail() {
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>;
   if (!profile) return <div className="text-center py-12 text-muted-foreground">Profile not found.</div>;
 
-  const canEdit = role === "admin" || role === "developer" || role === "me";
+  const canEdit = role === "admin" || role === "developer";
   const canDelete = role === "admin";
+  const socialLinks = [
+    { url: profile.website_url, label: "Website", Icon: Globe },
+    { url: profile.facebook_url, label: "Facebook", Icon: Facebook },
+    { url: profile.youtube_url, label: "YouTube", Icon: Youtube },
+    { url: profile.instagram_url, label: "Instagram", Icon: Instagram },
+  ].filter((l) => l.url);
 
   return (
     <div className="space-y-6 max-w-7xl">
@@ -104,6 +110,26 @@ export default function ProfileDetail() {
                   <div className="sm:col-span-2">
                     <dt className="text-xs uppercase tracking-wide text-muted-foreground">Trade License</dt>
                     <dd className="mt-1 text-sm font-medium">{profile.trade_license_text}</dd>
+                  </div>
+                )}
+                {socialLinks.length > 0 && (
+                  <div className="sm:col-span-2 pt-2 border-t">
+                    <dt className="text-xs uppercase tracking-wide text-muted-foreground mb-2">Social Links</dt>
+                    <dd className="flex flex-col gap-1.5">
+                      {socialLinks.map(({ url, label, Icon }) => (
+                        <a
+                          key={label}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-sm text-primary hover:underline w-fit"
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="font-medium">{label}:</span>
+                          <span className="truncate max-w-xs">{url}</span>
+                        </a>
+                      ))}
+                    </dd>
                   </div>
                 )}
               </dl>
