@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, Upload, ExternalLink, RefreshCw } from "lucide-react";
-import { type TaskStatus } from "@/lib/constants";
+import { STATUS_LABEL, type TaskStatus } from "@/lib/constants";
 import { toast } from "sonner";
 import { uploadFile } from "@/lib/uploadFile";
 
