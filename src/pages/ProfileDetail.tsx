@@ -100,10 +100,10 @@ export default function ProfileDetail() {
                 <Field label="Email" value={profile.email} />
                 <Field label="Location" value={profile.location} />
                 <Field label="Registration Date" value={profile.registration_date ? format(new Date(profile.registration_date), "PPP") : null} />
-                {profile.trade_license_url && (
+                {profile.trade_license_text && (
                   <div className="sm:col-span-2">
                     <dt className="text-xs uppercase tracking-wide text-muted-foreground">Trade License</dt>
-                    <dd className="mt-1"><a href={profile.trade_license_url} target="_blank" rel="noreferrer" className="text-primary hover:underline text-sm">View document</a></dd>
+                    <dd className="mt-1 text-sm font-medium">{profile.trade_license_text}</dd>
                   </div>
                 )}
               </dl>
