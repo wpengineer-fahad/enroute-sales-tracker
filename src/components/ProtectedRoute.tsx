@@ -9,7 +9,7 @@ interface Props {
 }
 
 export function ProtectedRoute({ children, allow }: Props) {
-  const { user, role, loading } = useAuth();
+  const { user, role, accountStatus, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,6 +22,18 @@ export function ProtectedRoute({ children, allow }: Props) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Email not confirmed -> verify page
+  if (!user.email_confirmed_at && !user.confirmed_at) {
+    if (location.pathname !== "/verify-email") {
+      return <Navigate to="/verify-email" replace />;
+    }
+  } else if (accountStatus && accountStatus !== "approved") {
+    // Verified but not approved
+    if (location.pathname !== "/pending-approval") {
+      return <Navigate to="/pending-approval" replace />;
+    }
   }
 
   if (allow && role && !allow.includes(role)) {
