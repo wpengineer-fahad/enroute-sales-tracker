@@ -229,6 +229,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          account_status: Database["public"]["Enums"]["account_status"]
           created_at: string
           display_name: string | null
           email: string | null
@@ -236,6 +237,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -243,6 +245,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_status?: Database["public"]["Enums"]["account_status"]
           created_at?: string
           display_name?: string | null
           email?: string | null
@@ -285,6 +288,10 @@ export type Database = {
         Args: { _me_profile_id: string }
         Returns: boolean
       }
+      get_account_status: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["account_status"]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -298,6 +305,7 @@ export type Database = {
       }
     }
     Enums: {
+      account_status: "pending" | "approved" | "rejected"
       app_role: "admin" | "developer" | "me"
       sub_sector:
         | "Automobile Workshop"
@@ -441,6 +449,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_status: ["pending", "approved", "rejected"],
       app_role: ["admin", "developer", "me"],
       sub_sector: [
         "Automobile Workshop",
