@@ -36,3 +36,17 @@ export const ROLE_LABEL: Record<AppRole, string> = {
   developer: "Sales / Market Developer",
   me: "Micro Enterprise",
 };
+
+export type OrderStatus = "pending" | "approved" | "rejected";
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "Pending Approval",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
+export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
+  pending: "bg-warning/15 text-warning border border-warning/30",
+  approved: "bg-success/15 text-success border border-success/30",
+  rejected: "bg-destructive/15 text-destructive border border-destructive/30",
+};
