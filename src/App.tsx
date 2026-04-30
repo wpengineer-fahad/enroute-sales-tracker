@@ -21,6 +21,7 @@ import VerifyEmail from "./pages/VerifyEmail";
 import PendingApproval from "./pages/PendingApproval";
 import UserApprovals from "./pages/UserApprovals";
 import CreateAdmin from "./pages/CreateAdmin";
+import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
