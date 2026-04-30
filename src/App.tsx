@@ -45,6 +45,7 @@ const App = () => (
               <Route path="/profiles/new" element={<ProfileNew />} />
               <Route path="/profiles/:id" element={<ProfileDetail />} />
               <Route path="/me" element={<MyProfile />} />
+              <Route path="/orders" element={<Orders />} />
               <Route path="/master-tasks" element={<ProtectedRoute allow={["admin"]}><MasterTasks /></ProtectedRoute>} />
               <Route path="/master-products" element={<ProtectedRoute allow={["admin"]}><MasterProducts /></ProtectedRoute>} />
               <Route path="/developers" element={<ProtectedRoute allow={["admin"]}><Developers /></ProtectedRoute>} />
