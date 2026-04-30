@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, ListChecks, Package, UserCog, BarChart3, Upload, Building2, LogOut,
-  ShieldCheck, ShieldPlus,
+  ShieldCheck, ShieldPlus, ShoppingCart,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -22,6 +22,7 @@ export function AppSidebar() {
     { title: "ME Profiles", url: "/profiles", icon: Users },
     { title: "Master Tasks", url: "/master-tasks", icon: ListChecks },
     { title: "Master Products", url: "/master-products", icon: Package },
+    { title: "Orders", url: "/orders", icon: ShoppingCart },
     { title: "Developers", url: "/developers", icon: UserCog },
     { title: "Sub-Sectors", url: "/sub-sectors", icon: BarChart3 },
     { title: "Bulk Import", url: "/import", icon: Upload },
@@ -31,10 +32,12 @@ export function AppSidebar() {
   const devItems = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "My MEs", url: "/profiles", icon: Users },
+    { title: "Orders", url: "/orders", icon: ShoppingCart },
   ];
   const meItems = [
     { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "My Profile", url: "/me", icon: Building2 },
+    { title: "My Orders", url: "/orders", icon: ShoppingCart },
   ];
 
   const items = role === "admin" ? adminItems : role === "developer" ? devItems : meItems;

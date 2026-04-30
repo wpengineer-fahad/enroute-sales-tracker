@@ -1,151 +1,108 @@
-# Sales Tracking System — SaaS Dashboard
+## Product Catalog + ME Purchase Flow
 
-A role-based SaaS app for tracking Micro Enterprises (MEs), their fixed master tasks, and product assignments, with three distinct experiences: Admin, Sales/Market Developer, and ME user.
-
----
-
-## 1. Roles & Authentication
-
-Simple email/password login with a role selector on the login screen:
-- **Admin** — full access
-- **Sales/Market Developer** — access only to assigned MEs
-- **ME (Micro Enterprise)** — access only to own profile
-
-Signup creates the auth user; role is chosen at signup (or assigned by Admin). Each ME = exactly one profile (1-to-1).
+Extend the existing Master Products system into a full product catalog with stock/pricing, plus a cart and developer-approved purchase workflow. No changes to dashboards, profile layout, task system, or role permissions outside the new purchase flow.
 
 ---
 
-## 2. Profile (ME) Module
+### 1. Database changes (migration)
 
-Each profile contains:
-- Owner Name, Enterprise Name, Business Category (dropdown)
-- Contact Number, Email, Location
-- Registration Date
-- Trade License (file upload)
-- Owner Image, Shop Image (image uploads)
-- Sub-sector (one of 12, see below)
-- Assigned Developer
+**Extend `master_products`** (keeps existing assignments intact):
+- `category` text — must match one of the 13 sub-sectors (validated via trigger)
+- `price` numeric(10,2) NOT NULL DEFAULT 0
+- `stock` integer NOT NULL DEFAULT 0 (CHECK >= 0)
+- `image_url` text
 
-**Sub-sectors (12):** Automobile Workshop, Dairy products, Dry fish processing and trade, Eco-friendly tourism, Full grain rice, High-value crops, High-value handicrafts rural area, Leather products, Loom, Machinery & Equipment, Metal products, Mini garments, Poultry.
+**New storage bucket**: `product-images` (public read, admin write).
 
-### Profile Detail Page Layout (same for all roles)
-3-column card layout:
-- **Left:** Owner avatar (rounded, medium)
-- **Middle:** Profile info (label + value format)
-- **Right:** Shop image (rectangular card)
+**New table `orders`**:
+- `me_profile_id`, `developer_id` (snapshot of assigned dev at checkout), `status` (pending/approved/rejected), `total_amount`, `notes`, timestamps
 
-Responsive: 3-col on desktop, 2+1 on tablet, vertical stack on mobile (Avatar → Info → Shop).
+**New table `order_items`**:
+- `order_id`, `master_product_id`, `quantity`, `unit_price` (snapshot)
 
-Below the header card: two tabs/sections — **Tasks** and **Products**.
+**New enum `order_status`**: `pending`, `approved`, `rejected`
 
----
+**RLS**:
+- `master_products`: admin full write; everyone authenticated can read (already exists).
+- `orders`: ME can insert/select own; assigned developer can select/update; admin full access.
+- `order_items`: follow parent order access.
 
-## 3. Fixed Master Task System
-
-24 predefined global tasks auto-attached to every ME profile:
-
-Banner/Festoon, Billboard, Cutout Board, Digital Media Posts, Environmental NOC, Facebook Page Development, Leaflet/Brochure/Product Catalog, Media Buying, OVC & Documentary, POSM Items, Packaging, Post Design (5 times), Press Releases, Price Tag, Print Media Ads, Product License, Product Testing Support, Retail Branding, Shop Sign, Trade License, Visiting Card, Voiceover Recording, YouTube Channel, FB/YouTube Boosting.
-
-**Rules:**
-- Only **Admin** can add/remove tasks from the master list
-- Per-ME, only **status** is editable: Pending / Processing / Completed
-- Proof upload allowed **only when status = Completed**
-- Developer & ME cannot create or delete tasks
+**Approval trigger** (`approve_order_deduct_stock`):
+- On `orders.status` change `pending → approved`: deduct each item's quantity from `master_products.stock`. Reject if any stock would go negative (keeps order pending, raises error).
+- `pending → rejected`: no stock change.
+- Status transitions locked once not pending.
 
 ---
 
-## 4. Product List
+### 2. Admin: Product management UI
 
-Same 24-item list as products (predefined, editable by Admin only). Each product can be assigned to a profile with a status (Pending / Processing / Completed). Developer can assign and update status on assigned MEs only.
+Rewrite `src/pages/MasterProducts.tsx` into a full product table:
 
----
+**Top bar**:
+- "Add Product" button → opens dialog
+- Sub-sector filter dropdown
 
-## 5. Role Permissions Summary
+**Table columns**: Image thumbnail · Name · Category · Price (৳) · Stock · Actions (Edit / Delete)
 
-| Capability | Admin | Developer | ME |
-|---|---|---|---|
-| View all profiles | ✔ | Assigned only | Own only |
-| Edit profiles | ✔ | Assigned only (no ownership change) | Own only |
-| Create profile | ✔ | ✘ | Own (one) |
-| Delete profile | ✔ | ✘ | ✘ |
-| Update task status | ✔ | Assigned MEs | Own (limited) |
-| Upload proof | ✔ | Assigned MEs | Own |
-| Add/remove master tasks | ✔ | ✘ | ✘ |
-| Manage product master list | ✔ | ✘ | ✘ |
-| Assign products to ME | ✔ | Assigned only | ✘ |
-| View global dashboard | ✔ | ✘ | ✘ |
+**Add/Edit Product dialog** (new `src/components/products/ProductFormDialog.tsx`):
+- Name (text)
+- Category (Select — 13 sub-sectors from `SUB_SECTORS`)
+- Price ৳ (number, ≥0)
+- Stock (number, ≥0)
+- Image upload (to `product-images` bucket via existing `uploadFile` helper)
+
+Uses zod validation. Admin-only — guarded via existing role check.
 
 ---
 
-## 6. Dashboards
+### 3. ME: Assigned products + cart
 
-### Admin Dashboard
-- **Summary cards:** Total Profiles, Total Tasks, Completed, Pending, Processing
-- **Pie chart:** Task status distribution
-- **Bar chart:** Completion by Sub-Sector
-- **Sub-Sector Performance table:** Sub Sector | Total MEs | 75%+ Completed | 50–74% | <50%
-- **Developer Performance table:** Developer | Total MEs | Tasks Completed | Tasks Pending
+Update `src/components/profile/ProductsSection.tsx` for ME view:
 
-### Developer Dashboard (limited)
-- Total Assigned MEs, Tasks Completed, Pending, Processing
-- Optional simple task-status chart
-- No global analytics, no sub-sector summary
+- Existing assigned-product list now shows: Name · Price · Available Stock · Quantity input · "Add to Cart" button
+- Validate `1 ≤ qty ≤ stock`
+- Cart held in local React state (no DB cart table — simpler) inside a new `CartProvider` context scoped to MyProfile page
 
-### ME Dashboard (very simple)
-- Own profile card (3-col layout)
-- Own tasks (status view, limited update)
-- Own products (status view)
-- **Profile Completion %** progress bar based on completed tasks
+Add new `src/components/products/CartDrawer.tsx`:
+- Sheet/drawer triggered by floating "Cart (n)" button
+- Lists items with qty editor + remove
+- Total in ৳
+- "Request Purchase" button → creates `orders` + `order_items` rows with status `pending`, `developer_id` snapshot from ME profile
+- Toast confirmation, clears cart
+
+For Admin/Developer ProductsSection view: unchanged (read-only assignment list).
 
 ---
 
-## 7. Navigation & UI
+### 4. Orders / Purchase approval UI
 
-- Sidebar navigation (collapsible, mobile-responsive)
-- Top header with user menu + role badge
-- Profiles list: search, filter (by sub-sector, developer, status), pagination
-- Bulk CSV import for profiles (Admin)
-- Clean SaaS aesthetic: cards, soft shadows, neutral palette with a single accent
-- Toasts for feedback, confirmation dialogs for destructive actions
+**New page `src/pages/Orders.tsx`** (sidebar entry: "Orders"):
 
----
+- **ME view**: Own orders list — date, items count, total, status badge
+- **Developer view**: Pending orders from assigned MEs at top with Approve/Reject buttons; history below
+- **Admin view**: All orders, read-only oversight + status filter
 
-## 8. Pages / Routes
+Shared table with role-conditional action column. Approve calls update `status='approved'` (DB trigger handles stock); Reject sets `status='rejected'`. Errors from insufficient stock surfaced via toast.
 
-- `/login` — role-selector login
-- `/signup` — signup (with role)
-- `/dashboard` — role-aware (Admin / Developer / ME variants)
-- `/profiles` — list (Admin sees all, Developer sees assigned, ME redirected to own)
-- `/profiles/:id` — 3-column detail page with Tasks & Products tabs
-- `/profiles/new` — create profile (Admin or first-time ME)
-- `/master-tasks` — Admin: manage 24-task master list
-- `/products` — Admin: manage product master list
-- `/developers` — Admin: developer performance view
-- `/import` — Admin: CSV bulk import
+Add route + sidebar link visible to all 3 roles.
 
 ---
 
-## Technical Notes
+### 5. Constants / types
 
-**Stack:** React + Vite + Tailwind + shadcn/ui, React Router, TanStack Query, Recharts for charts, Lovable Cloud (Supabase) for backend.
+- Reuse `SUB_SECTORS` for category dropdown (no new master list)
+- Add `ORDER_STATUS_LABEL` / color map in `src/lib/constants.ts`
 
-**Database tables:**
-- `profiles` — auth-linked user metadata + role (`admin` | `developer` | `me`)
-- `user_roles` — separate roles table with `app_role` enum + `has_role()` security definer function (avoids RLS recursion / privilege escalation)
-- `me_profiles` — the ME entity records (owner_name, enterprise_name, sub_sector, developer_id, user_id, etc.)
-- `master_tasks` — 24-row seeded list, Admin-managed
-- `me_tasks` — per-(me_profile, master_task) status + proof_url
-- `products` — master product list
-- `me_products` — assignments + status
-- `business_categories` — dropdown source
+---
 
-**Storage buckets:** `trade-licenses`, `owner-images`, `shop-images`, `task-proofs` (RLS-scoped).
+### 6. Files
 
-**RLS policies (strict isolation):**
-- ME: rows where `user_id = auth.uid()`
-- Developer: `me_profiles` where `developer_id = auth.uid()`; child rows joined via parent
-- Admin: full access via `has_role(auth.uid(), 'admin')`
+**New**: migration, `src/components/products/ProductFormDialog.tsx`, `src/components/products/CartDrawer.tsx`, `src/contexts/CartContext.tsx`, `src/pages/Orders.tsx`
 
-**Auto-attach tasks:** DB trigger on `me_profiles` insert creates 24 `me_tasks` rows (status=Pending). Trigger on `master_tasks` insert backfills all existing MEs.
+**Modified**: `src/pages/MasterProducts.tsx` (full rewrite), `src/components/profile/ProductsSection.tsx` (ME cart UI), `src/lib/constants.ts`, `src/App.tsx` (route), `src/components/AppSidebar.tsx` (Orders link), `src/integrations/supabase/types.ts` (auto-regenerated)
 
-**Phase 1 scope:** Profile module + fixed task/product tracking + role-based dashboards + login. No payments, no complex auth flows (email/password only).
+---
+
+### Out of scope (not changed)
+
+Dashboard, profile 3-column layout, task system, auth/approval flow, existing product assignment mechanism, role permission model outside the new purchase approval.

@@ -34,22 +34,34 @@ export type Database = {
       }
       master_products: {
         Row: {
+          category: string | null
           created_at: string
           display_order: number
           id: string
+          image_url: string | null
           name: string
+          price: number
+          stock: number
         }
         Insert: {
+          category?: string | null
           created_at?: string
           display_order?: number
           id?: string
+          image_url?: string | null
           name: string
+          price?: number
+          stock?: number
         }
         Update: {
+          category?: string | null
           created_at?: string
           display_order?: number
           id?: string
+          image_url?: string | null
           name?: string
+          price?: number
+          stock?: number
         }
         Relationships: []
       }
@@ -239,6 +251,80 @@ export type Database = {
           },
         ]
       }
+      order_items: {
+        Row: {
+          created_at: string
+          id: string
+          master_product_id: string
+          order_id: string
+          quantity: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          master_product_id: string
+          order_id: string
+          quantity: number
+          unit_price?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          master_product_id?: string
+          order_id?: string
+          quantity?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          developer_id: string | null
+          id: string
+          me_profile_id: string
+          notes: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          developer_id?: string | null
+          id?: string
+          me_profile_id: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          developer_id?: string | null
+          id?: string
+          me_profile_id?: string
+          notes?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_status: Database["public"]["Enums"]["account_status"]
@@ -319,6 +405,7 @@ export type Database = {
     Enums: {
       account_status: "pending" | "approved" | "rejected"
       app_role: "admin" | "developer" | "me"
+      order_status: "pending" | "approved" | "rejected"
       sub_sector:
         | "Automobile Workshop"
         | "Dairy products"
@@ -463,6 +550,7 @@ export const Constants = {
     Enums: {
       account_status: ["pending", "approved", "rejected"],
       app_role: ["admin", "developer", "me"],
+      order_status: ["pending", "approved", "rejected"],
       sub_sector: [
         "Automobile Workshop",
         "Dairy products",
