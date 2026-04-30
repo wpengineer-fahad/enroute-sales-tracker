@@ -123,7 +123,7 @@ export default function Orders() {
                 {filtered.map((o) => {
                   const isOpen = expanded.has(o.id);
                   return (
-                    <FragmentRow key={o.id}>
+                    <Fragment key={o.id}>
                       <TableRow className="hover:bg-muted/30 cursor-pointer" onClick={() => toggle(o.id)}>
                         <TableCell>{isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</TableCell>
                         <TableCell className="text-sm">{format(new Date(o.created_at), "PP p")}</TableCell>
