@@ -352,6 +352,57 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_reports: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          developer_id: string | null
+          id: string
+          item_name: string
+          me_profile_id: string
+          month: string
+          note: string | null
+          quantity_sold: number
+          status: Database["public"]["Enums"]["sales_report_status"]
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          developer_id?: string | null
+          id?: string
+          item_name: string
+          me_profile_id: string
+          month: string
+          note?: string | null
+          quantity_sold: number
+          status?: Database["public"]["Enums"]["sales_report_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          developer_id?: string | null
+          id?: string
+          item_name?: string
+          me_profile_id?: string
+          month?: string
+          note?: string | null
+          quantity_sold?: number
+          status?: Database["public"]["Enums"]["sales_report_status"]
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -406,6 +457,11 @@ export type Database = {
       account_status: "pending" | "approved" | "rejected"
       app_role: "admin" | "developer" | "me"
       order_status: "pending" | "approved" | "rejected"
+      sales_report_status:
+        | "pending_review"
+        | "under_developer_review"
+        | "approved"
+        | "rejected"
       sub_sector:
         | "Automobile Workshop"
         | "Dairy products"
@@ -551,6 +607,12 @@ export const Constants = {
       account_status: ["pending", "approved", "rejected"],
       app_role: ["admin", "developer", "me"],
       order_status: ["pending", "approved", "rejected"],
+      sales_report_status: [
+        "pending_review",
+        "under_developer_review",
+        "approved",
+        "rejected",
+      ],
       sub_sector: [
         "Automobile Workshop",
         "Dairy products",

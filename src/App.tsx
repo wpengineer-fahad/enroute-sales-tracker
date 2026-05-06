@@ -22,6 +22,7 @@ import PendingApproval from "./pages/PendingApproval";
 import UserApprovals from "./pages/UserApprovals";
 import CreateAdmin from "./pages/CreateAdmin";
 import Orders from "./pages/Orders";
+import SalesReports from "./pages/SalesReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/profiles/:id" element={<ProfileDetail />} />
               <Route path="/me" element={<MyProfile />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/sales-reports" element={<ProtectedRoute allow={["admin","developer"]}><SalesReports /></ProtectedRoute>} />
               <Route path="/master-tasks" element={<ProtectedRoute allow={["admin"]}><MasterTasks /></ProtectedRoute>} />
               <Route path="/master-products" element={<ProtectedRoute allow={["admin"]}><MasterProducts /></ProtectedRoute>} />
               <Route path="/developers" element={<ProtectedRoute allow={["admin"]}><Developers /></ProtectedRoute>} />

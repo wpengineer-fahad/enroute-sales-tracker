@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, ListChecks, Package, UserCog, BarChart3, Upload, Building2, LogOut,
-  ShieldCheck, ShieldPlus, ShoppingCart,
+  ShieldCheck, ShieldPlus, ShoppingCart, TrendingUp,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -23,6 +23,7 @@ export function AppSidebar() {
     { title: "Master Tasks", url: "/master-tasks", icon: ListChecks },
     { title: "Master Products", url: "/master-products", icon: Package },
     { title: "Orders", url: "/orders", icon: ShoppingCart },
+    { title: "Sales Reports", url: "/sales-reports", icon: TrendingUp },
     { title: "Developers", url: "/developers", icon: UserCog },
     { title: "Sub-Sectors", url: "/sub-sectors", icon: BarChart3 },
     { title: "Bulk Import", url: "/import", icon: Upload },
@@ -33,6 +34,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "My MEs", url: "/profiles", icon: Users },
     { title: "Orders", url: "/orders", icon: ShoppingCart },
+    { title: "Sales Reports", url: "/sales-reports", icon: TrendingUp },
   ];
   const meItems = [
     { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard },
