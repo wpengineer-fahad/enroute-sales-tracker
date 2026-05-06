@@ -50,3 +50,24 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   approved: "bg-success/15 text-success border border-success/30",
   rejected: "bg-destructive/15 text-destructive border border-destructive/30",
 };
+
+export type SalesReportStatus = "pending_review" | "under_developer_review" | "approved" | "rejected";
+
+export const SALES_STATUS_LABEL: Record<SalesReportStatus, string> = {
+  pending_review: "Pending Review",
+  under_developer_review: "Under Developer Review",
+  approved: "Approved",
+  rejected: "Rejected",
+};
+
+export const SALES_STATUS_COLOR: Record<SalesReportStatus, string> = {
+  pending_review: "bg-muted text-muted-foreground border border-border",
+  under_developer_review: "bg-warning/15 text-warning border border-warning/30",
+  approved: "bg-success/15 text-success border border-success/30",
+  rejected: "bg-destructive/15 text-destructive border border-destructive/30",
+};
+
+export const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
