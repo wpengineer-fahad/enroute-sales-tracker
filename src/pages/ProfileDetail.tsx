@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Pencil, Trash2, Globe, Facebook, Youtube, Instagram } from "lucide-react";
 import { TasksSection } from "@/components/profile/TasksSection";
 import { ProductsSection } from "@/components/profile/ProductsSection";
+import { SalesReportsSection } from "@/components/profile/SalesReportsSection";
 import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
