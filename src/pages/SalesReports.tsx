@@ -45,21 +45,24 @@ export default function SalesReports() {
     setLoading(true);
     const { data, error } = await supabase
       .from("sales_reports")
-      .select(
-        "id, item_name, month, quantity_sold, total_amount, status, me_profile_id, developer_id, me_profile:me_profiles(enterprise_name, owner_name), developer:profiles!sales_reports_developer_id_fkey(display_name, email)"
-      )
+      .select("id, item_name, month, quantity_sold, total_amount, status, me_profile_id, developer_id, me_profile:me_profiles(enterprise_name, owner_name)")
       .order("created_at", { ascending: false });
     if (error) {
-      // Fallback without join on profiles if FK alias not available
-      const { data: d2, error: e2 } = await supabase
-        .from("sales_reports")
-        .select("id, item_name, month, quantity_sold, total_amount, status, me_profile_id, developer_id, me_profile:me_profiles(enterprise_name, owner_name)")
-        .order("created_at", { ascending: false });
-      if (e2) toast.error(e2.message);
-      setRows(((d2 ?? []) as any).map((r: any) => ({ ...r, developer: null })));
-    } else {
-      setRows((data ?? []) as any);
+      toast.error(error.message);
+      setRows([]);
+      setLoading(false);
+      return;
     }
+    const devIds = Array.from(new Set((data ?? []).map((r: any) => r.developer_id).filter(Boolean)));
+    const devMap: Record<string, { display_name: string | null; email: string | null }> = {};
+    if (devIds.length) {
+      const { data: devs } = await supabase
+        .from("profiles")
+        .select("id, display_name, email")
+        .in("id", devIds as string[]);
+      (devs ?? []).forEach((d: any) => { devMap[d.id] = { display_name: d.display_name, email: d.email }; });
+    }
+    setRows(((data ?? []) as any).map((r: any) => ({ ...r, developer: r.developer_id ? devMap[r.developer_id] ?? null : null })));
     setLoading(false);
   };
 
