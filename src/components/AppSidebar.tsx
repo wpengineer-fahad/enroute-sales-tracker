@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, ListChecks, Package, UserCog, BarChart3, Upload, Building2, LogOut,
-  ShieldCheck, ShieldPlus, ShoppingCart,
+  ShieldCheck, ShieldPlus, ShoppingCart, TrendingUp,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
