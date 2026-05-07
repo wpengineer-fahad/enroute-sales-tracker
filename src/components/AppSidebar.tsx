@@ -40,6 +40,7 @@ export function AppSidebar() {
     { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "My Profile", url: "/me", icon: Building2 },
     { title: "My Orders", url: "/orders", icon: ShoppingCart },
+    { title: "Sales Reports", url: "/sales-reports", icon: TrendingUp },
   ];
 
   const items = role === "admin" ? adminItems : role === "developer" ? devItems : meItems;

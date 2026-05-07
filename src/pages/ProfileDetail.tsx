@@ -156,16 +156,12 @@ export default function ProfileDetail() {
         <TabsList>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="sales">Monthly Sales Report</TabsTrigger>
         </TabsList>
         <TabsContent value="tasks" className="mt-4">
           <TasksSection meProfileId={profile.id} />
         </TabsContent>
         <TabsContent value="products" className="mt-4">
           <ProductsSection meProfileId={profile.id} />
-        </TabsContent>
-        <TabsContent value="sales" className="mt-4">
-          <SalesReportsSection meProfileId={profile.id} />
         </TabsContent>
       </Tabs>
 
