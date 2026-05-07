@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft, Pencil, Trash2, Globe, Facebook, Youtube, Instagram } from "lucide-react";
 import { TasksSection } from "@/components/profile/TasksSection";
 import { ProductsSection } from "@/components/profile/ProductsSection";
-import { SalesReportsSection } from "@/components/profile/SalesReportsSection";
+
 import { ProfileEditDialog } from "@/components/profile/ProfileEditDialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -156,16 +156,12 @@ export default function ProfileDetail() {
         <TabsList>
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="products">Products</TabsTrigger>
-          <TabsTrigger value="sales">Monthly Sales Report</TabsTrigger>
         </TabsList>
         <TabsContent value="tasks" className="mt-4">
           <TasksSection meProfileId={profile.id} />
         </TabsContent>
         <TabsContent value="products" className="mt-4">
           <ProductsSection meProfileId={profile.id} />
-        </TabsContent>
-        <TabsContent value="sales" className="mt-4">
-          <SalesReportsSection meProfileId={profile.id} />
         </TabsContent>
       </Tabs>
 

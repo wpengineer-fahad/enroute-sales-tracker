@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Check, X, Flag, Send, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Check, X, Flag, Send, ExternalLink, Plus, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import {
@@ -22,51 +24,65 @@ interface Row {
   month: string;
   quantity_sold: number;
   total_amount: number;
+  note: string | null;
   status: SalesReportStatus;
+  created_at: string;
   me_profile_id: string;
   developer_id: string | null;
   me_profile: { enterprise_name: string; owner_name: string } | null;
   developer: { display_name: string | null; email: string | null } | null;
 }
 
+const currentYear = new Date().getFullYear();
+const YEARS = Array.from({ length: 6 }, (_, i) => currentYear - 3 + i);
+
 export default function SalesReports() {
-  const { role } = useAuth();
+  const { role, user } = useAuth();
   const isAdmin = role === "admin";
+  const isDev = role === "developer";
+  const isMe = role === "me";
+
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
+  const [myMeProfileId, setMyMeProfileId] = useState<string | null>(null);
 
   const [meFilter, setMeFilter] = useState("");
   const [devFilter, setDevFilter] = useState("");
   const [monthFilter, setMonthFilter] = useState<string>("all");
+  const [yearFilter, setYearFilter] = useState<string>("all");
   const [itemFilter, setItemFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<Row | null>(null);
+
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("sales_reports")
-      .select("id, item_name, month, quantity_sold, total_amount, status, me_profile_id, developer_id, me_profile:me_profiles(enterprise_name, owner_name)")
+      .select(
+        "id, item_name, month, quantity_sold, total_amount, note, status, created_at, me_profile_id, developer_id, me_profile:me_profiles!sales_reports_me_profile_id_fkey(enterprise_name, owner_name), developer:profiles!sales_reports_developer_id_fkey(display_name, email)"
+      )
       .order("created_at", { ascending: false });
+
+    const { data, error } = await query;
     if (error) {
       toast.error(error.message);
       setRows([]);
       setLoading(false);
       return;
     }
-    const devIds = Array.from(new Set((data ?? []).map((r: any) => r.developer_id).filter(Boolean)));
-    const devMap: Record<string, { display_name: string | null; email: string | null }> = {};
-    if (devIds.length) {
-      const { data: devs } = await supabase
-        .from("profiles")
-        .select("id, display_name, email")
-        .in("id", devIds as string[]);
-      (devs ?? []).forEach((d: any) => { devMap[d.id] = { display_name: d.display_name, email: d.email }; });
-    }
-    setRows(((data ?? []) as any).map((r: any) => ({ ...r, developer: r.developer_id ? devMap[r.developer_id] ?? null : null })));
+    setRows((data ?? []) as any);
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    if (isMe && user) {
+      supabase.from("me_profiles").select("id").eq("user_id", user.id).maybeSingle()
+        .then(({ data }) => setMyMeProfileId(data?.id ?? null));
+    }
+  }, [user?.id, role]);
 
   const updateStatus = async (id: string, status: SalesReportStatus) => {
     const { error } = await supabase.from("sales_reports").update({ status }).eq("id", id);
@@ -77,32 +93,45 @@ export default function SalesReports() {
 
   const filtered = useMemo(() => {
     return rows.filter((r) => {
+      const d = new Date(r.month);
       if (meFilter && !r.me_profile?.enterprise_name?.toLowerCase().includes(meFilter.toLowerCase())) return false;
       if (devFilter && !(r.developer?.display_name ?? r.developer?.email ?? "").toLowerCase().includes(devFilter.toLowerCase())) return false;
-      if (monthFilter !== "all" && new Date(r.month).getMonth() !== Number(monthFilter)) return false;
+      if (monthFilter !== "all" && d.getMonth() !== Number(monthFilter)) return false;
+      if (yearFilter !== "all" && d.getFullYear() !== Number(yearFilter)) return false;
       if (itemFilter && !r.item_name.toLowerCase().includes(itemFilter.toLowerCase())) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       return true;
     });
-  }, [rows, meFilter, devFilter, monthFilter, itemFilter, statusFilter]);
+  }, [rows, meFilter, devFilter, monthFilter, yearFilter, itemFilter, statusFilter]);
 
   const totalApproved = filtered.filter(r => r.status === "approved").reduce((s, r) => s + Number(r.total_amount), 0);
 
   return (
     <div className="space-y-4 max-w-7xl">
-      <div>
-        <h1 className="text-2xl font-bold">Sales Reports</h1>
-        <p className="text-sm text-muted-foreground">
-          {isAdmin ? "All sales reports across the platform." : "Sales reports from your assigned MEs."}
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-bold">Sales Reports</h1>
+          <p className="text-sm text-muted-foreground">
+            {isAdmin ? "All sales reports across the platform."
+              : isDev ? "Sales reports from your assigned MEs."
+              : "Submit and track your monthly sales reports."}
+          </p>
+        </div>
+        {(isMe && myMeProfileId) || isAdmin ? (
+          <Button size="sm" onClick={() => { setEditing(null); setOpen(true); }}>
+            <Plus className="h-4 w-4 mr-1.5" /> Submit Sales Report
+          </Button>
+        ) : null}
       </div>
 
       <Card>
-        <CardContent className="p-4 grid gap-3 md:grid-cols-5">
-          <div className="space-y-1.5">
-            <Label className="text-xs">ME (Enterprise)</Label>
-            <Input placeholder="Search..." value={meFilter} onChange={(e) => setMeFilter(e.target.value)} />
-          </div>
+        <CardContent className="p-4 grid gap-3 md:grid-cols-6">
+          {!isMe && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">ME (Enterprise)</Label>
+              <Input placeholder="Search..." value={meFilter} onChange={(e) => setMeFilter(e.target.value)} />
+            </div>
+          )}
           {isAdmin && (
             <div className="space-y-1.5">
               <Label className="text-xs">Developer</Label>
@@ -120,9 +149,21 @@ export default function SalesReports() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Item Name</Label>
-            <Input placeholder="Search..." value={itemFilter} onChange={(e) => setItemFilter(e.target.value)} />
+            <Label className="text-xs">Year</Label>
+            <Select value={yearFilter} onValueChange={setYearFilter}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All years</SelectItem>
+                {YEARS.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
+          {!isMe && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Item Name</Label>
+              <Input placeholder="Search..." value={itemFilter} onChange={(e) => setItemFilter(e.target.value)} />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label className="text-xs">Status</Label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -158,20 +199,21 @@ export default function SalesReports() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ME</TableHead>
+                    {!isMe && <TableHead>ME Name</TableHead>}
                     {isAdmin && <TableHead>Developer</TableHead>}
                     <TableHead>Item Name</TableHead>
                     <TableHead>Month</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Qty Sold</TableHead>
                     <TableHead className="text-right">Total (৳)</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>Submitted</TableHead>
+                    {!isMe && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map((r) => (
                     <TableRow key={r.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{r.me_profile?.enterprise_name ?? "—"}</TableCell>
+                      {!isMe && <TableCell className="font-medium">{r.me_profile?.enterprise_name ?? "—"}</TableCell>}
                       {isAdmin && <TableCell>{r.developer?.display_name ?? r.developer?.email ?? "—"}</TableCell>}
                       <TableCell>{r.item_name}</TableCell>
                       <TableCell>{format(new Date(r.month), "MMM yyyy")}</TableCell>
@@ -182,40 +224,50 @@ export default function SalesReports() {
                           {SALES_STATUS_LABEL[r.status]}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1 flex-wrap">
-                          {!isAdmin && r.status === "pending_review" && (
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "under_developer_review")}>
-                              <Flag className="h-3.5 w-3.5 mr-1" /> Flag
-                            </Button>
-                          )}
-                          {!isAdmin && (r.status === "pending_review" || r.status === "under_developer_review") && (
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "approved")}>
-                              <Send className="h-3.5 w-3.5 mr-1" /> Approve
-                            </Button>
-                          )}
-                          {isAdmin && r.status !== "approved" && (
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "approved")}>
-                              <Check className="h-3.5 w-3.5 mr-1" /> Approve
-                            </Button>
-                          )}
-                          {r.status !== "rejected" && (
-                            <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "rejected")}>
-                              <X className="h-3.5 w-3.5 mr-1" /> Reject
-                            </Button>
-                          )}
-                          <Button asChild size="sm" variant="ghost">
-                            <Link to={`/profiles/${r.me_profile_id}`}>
-                              <ExternalLink className="h-3.5 w-3.5" />
-                            </Link>
-                          </Button>
-                        </div>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {format(new Date(r.created_at), "PP")}
                       </TableCell>
+                      {!isMe && (
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-1 flex-wrap">
+                            {isDev && r.status === "pending_review" && (
+                              <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "under_developer_review")}>
+                                <Flag className="h-3.5 w-3.5 mr-1" /> Flag
+                              </Button>
+                            )}
+                            {isDev && (r.status === "pending_review" || r.status === "under_developer_review") && (
+                              <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "approved")}>
+                                <Send className="h-3.5 w-3.5 mr-1" /> Approve
+                              </Button>
+                            )}
+                            {isAdmin && r.status !== "approved" && (
+                              <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "approved")}>
+                                <Check className="h-3.5 w-3.5 mr-1" /> Approve
+                              </Button>
+                            )}
+                            {r.status !== "rejected" && (
+                              <Button size="sm" variant="outline" onClick={() => updateStatus(r.id, "rejected")}>
+                                <X className="h-3.5 w-3.5 mr-1" /> Reject
+                              </Button>
+                            )}
+                            {isAdmin && (
+                              <Button size="sm" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            <Button asChild size="sm" variant="ghost">
+                              <Link to={`/profiles/${r.me_profile_id}`}>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                              </Link>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      )}
                     </TableRow>
                   ))}
                   {filtered.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={10} className="text-center text-muted-foreground py-8">
                         No sales reports found.
                       </TableCell>
                     </TableRow>
@@ -226,6 +278,137 @@ export default function SalesReports() {
           )}
         </CardContent>
       </Card>
+
+      <ReportDialog
+        open={open}
+        onOpenChange={setOpen}
+        meProfileId={isMe ? myMeProfileId : editing?.me_profile_id ?? null}
+        editing={editing}
+        isAdmin={isAdmin}
+        onSaved={() => { setOpen(false); load(); }}
+      />
     </div>
+  );
+}
+
+function ReportDialog({
+  open, onOpenChange, meProfileId, editing, isAdmin, onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  meProfileId: string | null;
+  editing: Row | null;
+  isAdmin: boolean;
+  onSaved: () => void;
+}) {
+  const [itemName, setItemName] = useState("");
+  const [monthIdx, setMonthIdx] = useState<string>(String(new Date().getMonth()));
+  const [year, setYear] = useState<string>(String(currentYear));
+  const [qty, setQty] = useState<string>("");
+  const [total, setTotal] = useState<string>("");
+  const [note, setNote] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (editing) {
+      const d = new Date(editing.month);
+      setItemName(editing.item_name);
+      setMonthIdx(String(d.getMonth()));
+      setYear(String(d.getFullYear()));
+      setQty(String(editing.quantity_sold));
+      setTotal(String(editing.total_amount));
+      setNote(editing.note ?? "");
+    } else {
+      setItemName(""); setMonthIdx(String(new Date().getMonth())); setYear(String(currentYear));
+      setQty(""); setTotal(""); setNote("");
+    }
+  }, [editing, open]);
+
+  const submit = async () => {
+    if (!itemName.trim() || !qty || !total) {
+      toast.error("Please fill item name, quantity and total amount");
+      return;
+    }
+    if (!editing && !meProfileId) {
+      toast.error("No ME profile found for your account.");
+      return;
+    }
+    setSaving(true);
+    const monthDate = `${year}-${String(Number(monthIdx) + 1).padStart(2, "0")}-01`;
+    const payload: any = {
+      item_name: itemName.trim(),
+      month: monthDate,
+      quantity_sold: Number(qty),
+      total_amount: Number(total),
+      note: note.trim() || null,
+    };
+    let error;
+    if (editing && isAdmin) {
+      ({ error } = await supabase.from("sales_reports").update(payload).eq("id", editing.id));
+    } else {
+      payload.me_profile_id = meProfileId;
+      ({ error } = await supabase.from("sales_reports").insert(payload));
+    }
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(editing ? "Report updated" : "Sales report submitted");
+    onSaved();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editing ? "Edit Sales Report" : "Submit Sales Report"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Item Name</Label>
+            <Input value={itemName} onChange={(e) => setItemName(e.target.value)} placeholder="e.g. Cotton Saree" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Month</Label>
+              <Select value={monthIdx} onValueChange={setMonthIdx}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {MONTHS.map((m, i) => <SelectItem key={m} value={String(i)}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Year</Label>
+              <Select value={year} onValueChange={setYear}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {YEARS.map((y) => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Quantity Sold</Label>
+              <Input type="number" min="0" value={qty} onChange={(e) => setQty(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Total Sales (৳)</Label>
+              <Input type="number" min="0" step="0.01" value={total} onChange={(e) => setTotal(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Note (optional)</Label>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {editing ? "Save Changes" : "Submit Sales Report"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
